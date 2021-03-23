@@ -1916,7 +1916,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
          * The kc argument caches comparableClassFor(key) upon first use
          * comparing keys.
          *
-         * //遍历红黑树查找指定哈希和key的节点
+         * 遍历红黑树查找指定哈希和key的节点
          */
         final TreeNode<K,V> find(int h, Object k, Class<?> kc) {
             TreeNode<K,V> p = this;
