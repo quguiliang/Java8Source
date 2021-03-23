@@ -2202,7 +2202,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             for (TreeNode<K,V> e = b, next; e != null; e = next) {
                 next = (TreeNode<K,V>)e.next;
                 e.next = null;
-                if ((e.hash & bit) == 0) {
+                if ((e.hash & bit) == 0) { //哈希值和原数组长度进行&操作，为0则在原数组的索引位置，非0则在原数组索引位置+原数组长度的新位置
                     if ((e.prev = loTail) == null)
                         loHead = e;
                     else
