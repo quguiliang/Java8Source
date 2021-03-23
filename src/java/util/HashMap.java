@@ -648,6 +648,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      *         (A <tt>null</tt> return can also indicate that the map
      *         previously associated <tt>null</tt> with <tt>key</tt>.)
+     *
+     * 添加元素
      */
     public V put(K key, V value) {
         return putVal(hash(key), key, value, false, true);
@@ -2025,6 +2027,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
         /**
          * Tree version of putVal.
+         *
+         * 红黑树插入
          */
         final TreeNode<K,V> putTreeVal(HashMap<K,V> map, Node<K,V>[] tab,
                                        int h, K k, V v) {
@@ -2033,7 +2037,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             TreeNode<K,V> root = (parent != null) ? root() : this;
             for (TreeNode<K,V> p = root;;) {
                 int dir, ph; K pk;
-                if ((ph = p.hash) > h)
+                if ((ph = p.hash) > h) //进行哈希值的比较
                     dir = -1;
                 else if (ph < h)
                     dir = 1;
@@ -2041,32 +2045,32 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     return p;
                 else if ((kc == null &&
                           (kc = comparableClassFor(k)) == null) ||
-                         (dir = compareComparables(kc, k, pk)) == 0) {
+                         (dir = compareComparables(kc, k, pk)) == 0) { //哈希值相同，则按照key值进行比较
                     if (!searched) {
                         TreeNode<K,V> q, ch;
                         searched = true;
                         if (((ch = p.left) != null &&
-                             (q = ch.find(h, k, kc)) != null) ||
+                             (q = ch.find(h, k, kc)) != null) || //去左子树中查找哈希值相同，key相同的节点
                             ((ch = p.right) != null &&
-                             (q = ch.find(h, k, kc)) != null))
+                             (q = ch.find(h, k, kc)) != null)) //去右子树中查找哈希值相同，key相同的节点
                             return q;
                     }
-                    dir = tieBreakOrder(k, pk);
+                    dir = tieBreakOrder(k, pk); //通过比较k 与pk的hashcode
                 }
 
                 TreeNode<K,V> xp = p;
-                if ((p = (dir <= 0) ? p.left : p.right) == null) {
+                if ((p = (dir <= 0) ? p.left : p.right) == null) { //找到红黑树合适的位置插入
                     Node<K,V> xpn = xp.next;
                     TreeNode<K,V> x = map.newTreeNode(h, k, v, xpn);
-                    if (dir <= 0)
+                    if (dir <= 0) //插入到左节点或者右节点
                         xp.left = x;
                     else
                         xp.right = x;
-                    xp.next = x;
+                    xp.next = x; //插入到双向链表合适的位置
                     x.parent = x.prev = xp;
                     if (xpn != null)
                         ((TreeNode<K,V>)xpn).prev = x;
-                    moveRootToFront(tab, balanceInsertion(root, x));
+                    moveRootToFront(tab, balanceInsertion(root, x)); //做插入后的平衡调整，将平衡后的红黑树节点作为数组该位置的元素
                     return null;
                 }
             }
@@ -2186,12 +2190,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
          * @param tab the table for recording bin heads
          * @param index the index of the table being split
          * @param bit the bit of hash to split on
+         *
+         * 将红黑树按照扩容后的数组，重新计算索引位置，并且拆分后的红黑树还需要判断个数，从而决定是做去树化操作还是树化操作；
          */
         final void split(HashMap<K,V> map, Node<K,V>[] tab, int index, int bit) {
             TreeNode<K,V> b = this;
             // Relink into lo and hi lists, preserving order
-            TreeNode<K,V> loHead = null, loTail = null;
-            TreeNode<K,V> hiHead = null, hiTail = null;
+            TreeNode<K,V> loHead = null, loTail = null; //保存在原索引的红黑树
+            TreeNode<K,V> hiHead = null, hiTail = null; //保存在新索引的红黑树
             int lc = 0, hc = 0;
             for (TreeNode<K,V> e = b, next; e != null; e = next) {
                 next = (TreeNode<K,V>)e.next;
