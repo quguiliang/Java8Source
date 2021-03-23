@@ -850,6 +850,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      *         (A <tt>null</tt> return can also indicate that the map
      *         previously associated <tt>null</tt> with <tt>key</tt>.)
+     *
+     * 删除元素
      */
     public V remove(Object key) {
         Node<K,V> e;
@@ -866,18 +868,23 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @param matchValue if true only remove if value is equal
      * @param movable if false do not move other nodes while removing
      * @return the node, or null if none
+     *
+     * matchValue为false 表示不需要对比value值一致
+     * movalue为false 表示删除节点后不移动其他节点
      */
     final Node<K,V> removeNode(int hash, Object key, Object value,
                                boolean matchValue, boolean movable) {
+        //p为当前检查的节点
         Node<K,V>[] tab; Node<K,V> p; int n, index;
         if ((tab = table) != null && (n = tab.length) > 0 &&
-            (p = tab[index = (n - 1) & hash]) != null) {
+            (p = tab[index = (n - 1) & hash]) != null) { //待删除节点在数组索引位置存在元素
+            //node为找到的删除节点
             Node<K,V> node = null, e; K k; V v;
             if (p.hash == hash &&
-                ((k = p.key) == key || (key != null && key.equals(k))))
+                ((k = p.key) == key || (key != null && key.equals(k)))) //哈希值一致，key值一致则找到了要删除的节点
                 node = p;
-            else if ((e = p.next) != null) {
-                if (p instanceof TreeNode)
+            else if ((e = p.next) != null) { //未找到则看后继节点
+                if (p instanceof TreeNode) //如果后继节点为红黑树节点，则在红黑树中查找要删除的节点
                     node = ((TreeNode<K,V>)p).getTreeNode(hash, key);
                 else {
                     do {
@@ -888,16 +895,16 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                             break;
                         }
                         p = e;
-                    } while ((e = e.next) != null);
+                    } while ((e = e.next) != null); //不为红黑树节点，则遍历单链表查找
                 }
             }
             if (node != null && (!matchValue || (v = node.value) == value ||
-                                 (value != null && value.equals(v)))) {
+                                 (value != null && value.equals(v)))) { //找到节点，matchValue为true，还需要对比value值
                 if (node instanceof TreeNode)
-                    ((TreeNode<K,V>)node).removeTreeNode(this, tab, movable);
-                else if (node == p)
+                    ((TreeNode<K,V>)node).removeTreeNode(this, tab, movable); //待删除节点为红黑树节点，则进行红黑树节点的删除操作
+                else if (node == p) //待删除节点为数组中的元素，直接将后继节点替换即可
                     tab[index] = node.next;
-                else
+                else //待删除节点为单链表中的元素，将后继节点作为前驱节点的后继节点即可
                     p.next = node.next;
                 ++modCount;
                 --size;
@@ -1866,6 +1873,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
         /**
          * Returns root of tree containing this node.
+         *
+         * 查找红黑树根节点
          */
         final TreeNode<K,V> root() {
             for (TreeNode<K,V> r = this, p;;) {
@@ -1906,6 +1915,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
          * Finds the node starting at root p with the given hash and key.
          * The kc argument caches comparableClassFor(key) upon first use
          * comparing keys.
+         *
+         * 遍历红黑树查找指定哈希和key的节点
          */
         final TreeNode<K,V> find(int h, Object k, Class<?> kc) {
             TreeNode<K,V> p = this;
@@ -1936,6 +1947,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
         /**
          * Calls find for root node.
+         *
+         * 查找红黑树节点
          */
         final TreeNode<K,V> getTreeNode(int h, Object k) {
             return ((parent != null) ? root() : this).find(h, k, null);
@@ -2011,10 +2024,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         /**
          * Returns a list of non-TreeNodes replacing those linked from
          * this node.
+         *
+         * 遍历红黑树，还原成单链表结构
          */
         final Node<K,V> untreeify(HashMap<K,V> map) {
             Node<K,V> hd = null, tl = null;
-            for (Node<K,V> q = this; q != null; q = q.next) {
+            for (Node<K,V> q = this; q != null; q = q.next) { //遍历红黑树，依次将TreeNode转化为Node，还原成单链表形式
                 Node<K,V> p = map.replacementNode(q, null);
                 if (tl == null)
                     hd = p;
@@ -2221,18 +2236,18 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             }
 
             if (loHead != null) {
-                if (lc <= UNTREEIFY_THRESHOLD)
-                    tab[index] = loHead.untreeify(map);
-                else {
+                if (lc <= UNTREEIFY_THRESHOLD) //当红黑树的节点不大于去树化阈值，则将原索引处的红黑树进行去树化操作
+                    tab[index] = loHead.untreeify(map); //红黑树根节点作为原索引处的元素
+                else { //当红黑树的节点大于去树化阈值，则将原索引处的红黑树进行树化操作
                     tab[index] = loHead;
                     if (hiHead != null) // (else is already treeified)
                         loHead.treeify(tab);
                 }
             }
             if (hiHead != null) {
-                if (hc <= UNTREEIFY_THRESHOLD)
-                    tab[index + bit] = hiHead.untreeify(map);
-                else {
+                if (hc <= UNTREEIFY_THRESHOLD) //当红黑树的节点不大于去树化阈值，则将新索引处的红黑树进行去树化操作
+                    tab[index + bit] = hiHead.untreeify(map); //红黑树根节点作为新索引处的元素
+                else { //当红黑树的节点大于去树化阈值，则将新索引处的红黑树进行树化操作
                     tab[index + bit] = hiHead;
                     if (loHead != null)
                         hiHead.treeify(tab);
