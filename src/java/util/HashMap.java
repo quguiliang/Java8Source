@@ -303,6 +303,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /**
      * Basic hash bin node, used for most entries.  (See below for
      * TreeNode subclass, and in LinkedHashMap for its Entry subclass.)
+     *
+     * 静态内部类，HashMap存储的节点类型；可存储键值对，本身是个链表结构；
      */
     static class Node<K,V> implements Map.Entry<K,V> {
         final int hash;
@@ -433,6 +435,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * necessary. When allocated, length is always a power of two.
      * (We also tolerate length zero in some operations to allow
      * bootstrapping mechanics that are currently not needed.)
+     *
+     * 存放数据的数组
      */
     transient Node<K,V>[] table;
 
@@ -444,6 +448,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * The number of key-value mappings contained in this map.
+     *
+     * 存储的键值对数目
      */
     transient int size;
 
@@ -453,6 +459,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * the HashMap or otherwise modify its internal structure (e.g.,
      * rehash).  This field is used to make iterators on Collection-views of
      * the HashMap fail-fast.  (See ConcurrentModificationException).
+     *
+     * HashMap结构修改的次数，主要用于判断fat-fail
      */
     transient int modCount;
 
@@ -1922,24 +1930,24 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             TreeNode<K,V> p = this;
             do {
                 int ph, dir; K pk;
-                TreeNode<K,V> pl = p.left, pr = p.right, q;
-                if ((ph = p.hash) > h)
+                TreeNode<K,V> pl = p.left, pr = p.right, q; //保存左节点 右节点
+                if ((ph = p.hash) > h) //左节点哈希值大于给定查找结点的哈希值，则继续往左找
                     p = pl;
-                else if (ph < h)
+                else if (ph < h) //左节点哈希值小于给定查找结点的哈希值，则往右找
                     p = pr;
-                else if ((pk = p.key) == k || (k != null && k.equals(pk)))
+                else if ((pk = p.key) == k || (k != null && k.equals(pk))) //当前节点key值一致，则返回该节点
                     return p;
-                else if (pl == null)
+                else if (pl == null) //左节点为空，则往右找
                     p = pr;
-                else if (pr == null)
+                else if (pr == null) //右节点为空，则往左找
                     p = pl;
-                else if ((kc != null ||
+                else if ((kc != null || //哈希值相同，key不同，且有左右节点，此时看key是否可以比较，是则比较key值
                           (kc = comparableClassFor(k)) != null) &&
                          (dir = compareComparables(kc, k, pk)) != 0)
-                    p = (dir < 0) ? pl : pr;
-                else if ((q = pr.find(h, k, kc)) != null)
+                    p = (dir < 0) ? pl : pr; //小于往左，大于往右
+                else if ((q = pr.find(h, k, kc)) != null) //哈希相同，key不可比或者key也相同，则往右查找
                     return q;
-                else
+                else //否则往左
                     p = pl;
             } while (p != null);
             return null;
@@ -2109,30 +2117,35 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             int index = (n - 1) & hash;
             TreeNode<K,V> first = (TreeNode<K,V>)tab[index], root = first, rl;
             TreeNode<K,V> succ = (TreeNode<K,V>)next, pred = prev;
-            if (pred == null)
+            if (pred == null) //待删除节点为根节点，则其后继节点作为数组索引位置的元素
                 tab[index] = first = succ;
-            else
+            else //待删除节点存在前驱节点，则后继节点作为前驱节点的下一个节点
                 pred.next = succ;
-            if (succ != null)
+            if (succ != null) //待删除节点存在后继节点，则前驱节点作为后继节点的上一个节点
                 succ.prev = pred;
-            if (first == null)
+            if (first == null) //数组索引位置元素为null，直接返回
                 return;
-            if (root.parent != null)
+            if (root.parent != null) //找到红黑树的根节点
                 root = root.root();
             if (root == null || root.right == null ||
-                (rl = root.left) == null || rl.left == null) {
+                (rl = root.left) == null || rl.left == null) { //红黑树太小则进行去树化操作
                 tab[index] = first.untreeify(map);  // too small
                 return;
             }
+            //查找替代节点replacement
+            //p为待删除节点，pl为其左节点，pr为其右节点，replacement为替代节点
             TreeNode<K,V> p = this, pl = left, pr = right, replacement;
-            if (pl != null && pr != null) {
+            if (pl != null && pr != null) { //待删除节点有左右节点
+                //s为后继节点
                 TreeNode<K,V> s = pr, sl;
-                while ((sl = s.left) != null) // find successor
+                while ((sl = s.left) != null) // find successor //往待删除节点右子树的左边走
                     s = sl;
-                boolean c = s.red; s.red = p.red; p.red = c; // swap colors
+                boolean c = s.red; s.red = p.red; p.red = c; // swap colors //互换后继节点和待删除节点的颜色
+                //sr为后继节点的右节点
                 TreeNode<K,V> sr = s.right;
+                //pp为待删除节点的父节点
                 TreeNode<K,V> pp = p.parent;
-                if (s == pr) { // p was s's direct parent
+                if (s == pr) { // p was s's direct parent //待删除节点的右节点无左孩子--->右节点和待删除节点互换
                     p.parent = s;
                     s.right = p;
                 }
